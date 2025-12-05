@@ -1,45 +1,463 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/React-icon.svg/1200px-React-icon.svg.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>گردونه شانس روزانه</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700;900&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Vazirmatn', 'sans-serif'],
-            },
-            colors: {
-              primary: '#6366f1', // Indigo 500
-              secondary: '#a855f7', // Purple 500
-              accent: '#f43f5e', // Rose 500
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        font-family: 'Vazirmatn', sans-serif;
-        background-color: #f3f4f6;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/"
-  }
-}
-</script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>گردونه شانس | یک‌بار در هر ۲۴ ساعت</title>
+  <style>
+    :root{
+      /* رنگ‌های قابل تغییر */
+      --bg: #0f172a;            /* پس‌زمینه اصلی */
+      --card: #111827;          /* پس‌زمینه المان‌ها */
+      --text: #e5e7eb;          /* متن اصلی */
+      --muted: #9ca3af;         /* متن محو */
+      --accent: #22c55e;        /* دکمه‌ها/جزئیات */
+      --accent-2: #06b6d4;      /* هایلایت ثانویه */
+      --danger: #ef4444;        /* خطا */
+      --warning: #f59e0b;       /* هشدار */
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    *{box-sizing: border-box}
+    body{
+      margin:0;
+      font-family: Vazirmatn, Segoe UI, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 500px at 80% -200px, rgba(6,182,212,0.15), transparent 60%),
+        radial-gradient(900px 400px at -100px 80%, rgba(34,197,94,0.12), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header{
+      padding: 24px 16px;
+      text-align: center;
+    }
+    header h1{
+      margin: 0 0 8px 0;
+      font-size: 1.75rem;
+      letter-spacing: .2px;
+      background: linear-gradient(90deg, #fff, var(--accent-2), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    header p{
+      margin: 0;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    main{
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 16px;
+    }
+    @media (max-width: 980px){
+      main{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.0)), var(--card);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .section-header{
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .section-header h2{
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .section-body{
+      padding: 16px;
+    }
+
+    /* چیدمان گردونه و کنترل‌ها */
+    .wheel-wrap{
+      display: grid;
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 18px;
+      padding: 8px;
+    }
+    .wheel-area{
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      max-width: 520px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+    }
+    canvas#wheel{
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      filter: drop-shadow(0 16px 40px rgba(0,0,0,.45));
+      transition: transform cubic-bezier(.17,.67,.08,1.01);
+      will-change: transform;
+    }
+    .wheel-center{
+      position: absolute;
+      width: 18%;
+      aspect-ratio: 1/1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff 0%, #f1f5f9 25%, #cbd5e1 55%, #94a3b8 100%);
+      border: 2px solid rgba(255,255,255,.6);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      color: #0f172a;
+      box-shadow: 0 6px 14px rgba(0,0,0,.4);
+      z-index: 2;
+    }
+    .pointer{
+      position: absolute;
+      top: -8px;
+      right: 50%;
+      transform: translateX(50%);
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 18px solid var(--accent-2);
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,.35));
+      z-index: 3;
+    }
+
+    .controls{
+      display: grid;
+      gap: 10px;
+      width: 100%;
+      max-width: 520px;
+    }
+    .controls .row{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 520px){
+      .controls .row{ grid-template-columns: 1fr; }
+    }
+
+    .pill{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: .95rem;
+    }
+    .btn{
+      cursor: pointer;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      transition: transform .05s ease, box-shadow .2s ease, background .2s ease, opacity .2s ease;
+      box-shadow: 0 6px 16px rgba(6,182,212,.25);
+      background: linear-gradient(180deg, var(--accent-2), #0891b2);
+      color: #032a32;
+    }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn:active{ transform: translateY(1px); }
+    .btn[disabled]{ opacity: .6; cursor: not-allowed; box-shadow: none; }
+
+    .muted{ color: var(--muted); font-size: .9rem; }
+    .label{ font-size: .9rem; color: var(--muted); margin-bottom: 6px; }
+
+    /* مدیریت */
+    .admin-login{
+      display: grid;
+      gap: 8px;
+      max-width: 420px;
+    }
+    .admin-grid{
+      display: grid;
+      gap: 12px;
+    }
+    .table{
+      width: 100%;
+      border-collapse: collapse;
+      overflow: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .table th, .table td{
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      text-align: right;
+      font-size: .92rem;
+    }
+    .table th{
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .table input{
+      width: 100%;
+      padding: 8px 10px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: .92rem;
+    }
+    .row-actions{
+      display: flex;
+      gap: 6px;
+    }
+    .btn-secondary{
+      background: linear-gradient(180deg, #16a34a, #15803d);
+      box-shadow: 0 6px 16px rgba(22,163,74,.25);
+      color: #05280e;
+    }
+    .btn-ghost{
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      box-shadow: none;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .danger{
+      background: linear-gradient(180deg, var(--danger), #b91c1c);
+      color: #2b0b0b;
+      box-shadow: 0 6px 16px rgba(239,68,68,.25);
+    }
+
+    /* وضعیت/بنرها */
+    .alert{
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: .95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .alert-info{ background: rgba(6,182,212,.12); color: #cffafe; }
+    .alert-warn{ background: rgba(245,158,11,.12); color: #fde68a; }
+    .alert-error{ background: rgba(239,68,68,.12); color: #fecaca; }
+
+    /* مودال نتیجه */
+    .modal{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(2,6,23,.7);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+    }
+    .modal.show{ display: flex; }
+    .modal-card{
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: pop .18s ease-out;
+    }
+    @keyframes pop{
+      from{ transform: scale(.96); opacity: 0; }
+      to{ transform: scale(1); opacity: 1; }
+    }
+    .modal-header{
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-body{ padding: 16px; }
+    .badge{
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(34,197,94,.16);
+      color: #bbf7d0;
+      font-size: .85rem;
+      border: 1px solid rgba(34,197,94,.35);
+    }
+
+    footer{
+      padding: 20px 16px 30px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+  </style>
 </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>
+<body>
+  <header>
+    <h1>گردونه شانس | اسپین روزانه</h1>
+    <p>هر کاربر هر ۲۴ ساعت یک‌بار می‌تواند گردونه را بچرخاند و یکی از جوایز را برنده شود.</p>
+  </header>
+
+  <main>
+    <!-- گردونه و کنترل‌های کاربر -->
+    <section class="card" id="userSection">
+      <div class="section-header">
+        <h2>گردونه شانس</h2>
+        <span class="badge" id="spinStatusBadge">آماده اسپین</span>
+      </div>
+      <div class="section-body">
+        <div class="wheel-wrap">
+          <div class="wheel-area">
+            <div class="pointer" aria-hidden="true"></div>
+            <canvas id="wheel" width="800" height="800"></canvas>
+            <div class="wheel-center">اسپین</div>
+          </div>
+
+          <div class="controls">
+            <div class="row">
+              <div>
+                <div class="label">وضعیت اسپین روزانه</div>
+                <div id="spinStatus" class="alert alert-info">شما می‌توانید اسپین کنید.</div>
+              </div>
+              <div>
+                <div class="label">زمان تا اسپین بعدی</div>
+                <div id="countdown" class="pill">—</div>
+              </div>
+            </div>
+
+            <button class="btn" id="spinButton">چرخاندن گردونه</button>
+            <div class="muted">نکته: اسپین‌ها به‌صورت محلی در مرورگر شما ثبت می‌شوند. پاک‌کردن داده‌ها محدودیت را حذف می‌کند.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- مدیریت -->
+    <section class="card" id="adminSection">
+      <div class="section-header">
+        <h2>بخش مدیریت تنظیم جوایز</h2>
+        <span class="badge">رمزدار</span>
+      </div>
+      <div class="section-body" id="adminBody">
+        <!-- فرم ورود -->
+        <div id="adminLogin" class="admin-login">
+          <div class="label">برای ورود به پنل مدیریت رمز را وارد کنید</div>
+          <input type="password" id="adminPass" class="pill" placeholder="رمز مدیریت" />
+          <button class="btn" id="adminLoginBtn">ورود</button>
+          <div class="muted">فقط مدیر دسترسی دارد. رمز پیش‌فرض: 100700</div>
+          <div id="adminLoginMsg" class="alert alert-error" style="display:none">رمز اشتباه است.</div>
+        </div>
+
+        <!-- پنل مدیریت -->
+        <div id="adminPanel" class="admin-grid" style="display:none">
+          <div class="alert alert-warn">
+            با تغییر وزن‌ها، شانس بردن هر آیتم تغییر می‌کند. مجموع وزن‌ها لازم نیست ۱۰۰ باشد؛ احتمال هر آیتم برابر وزن/مجموع وزن‌هاست.
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="label">افزودن/حذف آیتم‌ها</div>
+            </div>
+            <div style="text-align:left">
+              <button class="btn btn-secondary" id="addRowBtn">افزودن آیتم</button>
+            </div>
+          </div>
+
+          <table class="table" id="itemsTable">
+            <thead>
+              <tr>
+                <th style="width:48%">نام جایزه</th>
+                <th style="width:22%">وزن (شانس)</th>
+                <th style="width:30%">عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTbody">
+              <!-- ردیف‌ها به‌صورت داینامیک -->
+            </tbody>
+          </table>
+
+          <div class="row">
+            <div class="pill" id="weightsInfo">مجموع وزن‌ها: —</div>
+            <div style="text-align:left; display:flex; gap:8px; justify-content:flex-end">
+              <button class="btn btn-ghost" id="resetDefaultsBtn">بازگردانی به جوایز پیش‌فرض</button>
+              <button class="btn" id="saveConfigBtn">ذخیره تنظیمات</button>
+            </div>
+          </div>
+
+          <div class="muted">
+            پس از ذخیره، گردونه به‌صورت خودکار با آیتم‌های جدید رسم می‌شود. تغییرات فقط در مرورگر فعلی ذخیره می‌شوند.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    ساخته‌شده برای آپلود در گیت‌هاب به‌صورت تک‌فایل HTML | ریسپانسیو و قابل شخصی‌سازی رنگ‌ها
+  </footer>
+
+  <!-- مودال نتیجه -->
+  <div class="modal" id="resultModal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <strong>نتیجه اسپین</strong>
+        <button class="btn btn-ghost" id="closeModalBtn">بستن</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info" id="resultText">شما برنده شدید!</div>
+        <div class="pill" id="resultNote">تبریک! نتیجه برای نمایش ذخیره شد. برای جوایز واقعی، نیازمند بک‌اند هستید.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----- تنظیمات اولیه و داده‌ها -----
+    const ADMIN_PASSWORD = '100700';
+    const LS_CONFIG_KEY = 'wheel_config_v1';
+    const LS_LAST_SPIN_KEY = 'wheel_last_spin_v1';
+    const LS_LAST_RESULT_KEY = 'wheel_last_result_v1';
+
+    const defaultItems = [
+      { label: '50 درصد تخفیف دوره ادمین طراح', weight: 10 },
+      { label: '40 درصد تخفیف دوره هوش مصنوعی', weight: 10 },
+      { label: '70 درصد دوره استوری موشن', weight: 6 },
+      { label: 'اکانت یک ماهه کپ کات', weight: 9 },
+      { label: '1 ساعت مشاوره رایگان', weight: 7 },
+      { label: '60 درصد تخفیف روی هر دوره', weight: 3 },
+      { label: 'پک آیکون های سه بعدی', weight: 12 },
+      { label: '300 هزار تومان', weight: 4 },
+    ];
+
+    // ----- ابزارهای عمومی -----
+    const q = sel => document.querySelector(sel);
+    const el = (tag, attrs = {}, children = []) => {
+      const node = document.createElement(tag);
+      Object.entries(attrs).forEach(([k,v])=>{
+        if(k==='class') node.className = v;
+        else if(k==='text') node.textContent = v;
+        else node.setAttribute(k, v);
+      });
+      children.forEach(c => node.appendChild(c));
+      return node;
+    };
+
+    const fmtTimeDiff = (ms) => {
+      if (ms <= 0) return 'الان می‌توانید اسپین کنید';
+      const totalSec = Math.ceil(ms / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      return `${h.toString().padStart(2,'0')}:${
